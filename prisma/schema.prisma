@@ -1,0 +1,22 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum PresenceEventType {
+  ENTER
+  EXIT
+}
+
+model PresenceEvent {
+  id        String            @id @default(cuid())
+  type      PresenceEventType
+  createdAt DateTime          @default(now()) @db.Timestamptz(3)
+
+  @@index([createdAt])
+  @@map("presence_events")
+}
