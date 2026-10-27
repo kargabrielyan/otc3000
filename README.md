@@ -74,7 +74,7 @@ Open `http://127.0.0.1:3000/`. It redirects to the dashboard.
 
 ## Coolify
 
-Production is one Next.js app on Coolify at `https://otc3000.neetrino.com`, using the external Neon database. There is no database container.
+Production is one Next.js app on Coolify at `https://otc3000.neetrino.com`, using the external Neon database. There is no database container. The build pack is the root `Dockerfile`. It produces the Next.js standalone server, so the image does not contain the full `node_modules` tree.
 
 Apply committed migrations with:
 
