@@ -2,6 +2,8 @@ const BUSINESS_DATE = /^(\d{4})-(\d{2})-(\d{2})$/;
 const MONTH_KEY = /^(\d{4})-(\d{2})$/;
 const CLOCK = /T(\d{2}):(\d{2}):(\d{2})(?:\.(\d{3}))?/;
 const DAY_MS = 86_400_000;
+const HOUR_MS = 3_600_000;
+const HOME_TIMELINE_START_MS = 10 * HOUR_MS;
 const EMPTY = "—";
 
 export type SlicePlacementInput = {
@@ -201,10 +203,41 @@ function millisecondsOnDay(day: string, timestamp: string): number {
   return businessTimeOfDayMs(timestamp) ?? 0;
 }
 
+export function homeTimelineStartMs(day: {
+  date: string;
+  firstArrival: string | null;
+  sessions: SlicePlacementInput[];
+}): number {
+  let earliest: number | null = null;
+
+  if (day.firstArrival) {
+    const arrival = businessTimeOfDayMs(day.firstArrival);
+    if (arrival !== null) {
+      earliest = arrival;
+    }
+  }
+
+  for (const slice of day.sessions) {
+    const start = slice.continuedFromPreviousDay
+      ? 0
+      : millisecondsOnDay(day.date, slice.start);
+    if (earliest === null || start < earliest) {
+      earliest = start;
+    }
+  }
+
+  if (earliest === null || earliest >= HOME_TIMELINE_START_MS) {
+    return HOME_TIMELINE_START_MS;
+  }
+
+  return Math.floor(earliest / HOUR_MS) * HOUR_MS;
+}
+
 export function slicePlacement(
   day: string,
   slice: SlicePlacementInput,
   nowTimestamp: string,
+  windowStartMs = 0,
 ): { left: number; width: number } {
   const startMs = slice.continuedFromPreviousDay
     ? 0
@@ -220,7 +253,15 @@ export function slicePlacement(
     endMs = startMs;
   }
 
-  const leftMs = Math.min(DAY_MS, Math.max(0, startMs));
+  const span = DAY_MS - windowStartMs;
+  const leftMs = Math.min(DAY_MS, Math.max(windowStartMs, startMs));
   const rightMs = Math.min(DAY_MS, Math.max(leftMs, endMs));
-  return { left: leftMs / DAY_MS, width: (rightMs - leftMs) / DAY_MS };
+  if (span <= 0) {
+    return { left: 0, width: 0 };
+  }
+
+  return {
+    left: (leftMs - windowStartMs) / span,
+    width: (rightMs - leftMs) / span,
+  };
 }

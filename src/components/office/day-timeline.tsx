@@ -1,4 +1,9 @@
-import { formatDuration, formatTimelineClock, slicePlacement } from "@/lib/format";
+import {
+  formatDuration,
+  formatMsSinceMidnight,
+  formatTimelineClock,
+  slicePlacement,
+} from "@/lib/format";
 import type { DaySessionSlice, DayStats } from "@/lib/stats/types";
 import { LiveDuration } from "@/components/office/live-duration";
 
@@ -29,10 +34,14 @@ function sliceEndLabel(slice: DaySessionSlice, nowTimestamp: string): string {
 export function DayTimeline({
   day,
   nowTimestamp,
+  startMs = 0,
 }: {
   day: DayStats;
   nowTimestamp: string;
+  startMs?: number;
 }) {
+  const middleMs = startMs + (86_400_000 - startMs) / 2;
+
   return (
     <div className="space-y-3">
       <div
@@ -40,7 +49,10 @@ export function DayTimeline({
         aria-hidden="true"
       >
         {day.sessions.map((slice, index) => {
-          const place = slicePlacement(day.date, slice, nowTimestamp);
+          const place = slicePlacement(day.date, slice, nowTimestamp, startMs);
+          if (place.width <= 0) {
+            return null;
+          }
           return (
             <span
               key={`${slice.start}-${index}`}
@@ -55,8 +67,8 @@ export function DayTimeline({
         })}
       </div>
       <div className="flex justify-between text-[10px] text-muted-foreground tabular-nums">
-        <span>00:00</span>
-        <span>12:00</span>
+        <span>{startMs === 0 ? "00:00" : formatMsSinceMidnight(startMs)}</span>
+        <span>{startMs === 0 ? "12:00" : formatMsSinceMidnight(middleMs)}</span>
         <span>24:00</span>
       </div>
       {day.sessions.length === 0 ? (

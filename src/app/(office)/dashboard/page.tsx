@@ -4,7 +4,11 @@ import {
   businessDateFromInstant,
   mondayWeekContaining,
 } from "@/lib/stats/calendar";
-import { formatBusinessDate, formatSummaryClock } from "@/lib/format";
+import {
+  formatBusinessDate,
+  formatSummaryClock,
+  homeTimelineStartMs,
+} from "@/lib/format";
 import { loadOfficeReport, officeNow } from "@/lib/office";
 import { toOfficePoints } from "@/components/office/chart-data";
 import { OfficeTimeChart } from "@/components/office/charts";
@@ -73,7 +77,11 @@ export default async function DashboardPage() {
 
       <section className="space-y-3">
         <h2 className="text-base font-medium">Timeline</h2>
-        <DayTimeline day={todayStats} nowTimestamp={report.generatedAt} />
+        <DayTimeline
+          day={todayStats}
+          nowTimestamp={report.generatedAt}
+          startMs={homeTimelineStartMs(todayStats)}
+        />
       </section>
 
       <section className="space-y-3">

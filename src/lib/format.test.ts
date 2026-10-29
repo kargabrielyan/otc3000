@@ -9,6 +9,7 @@ import {
   formatMsSinceMidnight,
   formatSummaryClock,
   formatTimelineClock,
+  homeTimelineStartMs,
   slicePlacement,
 } from "./format.ts";
 
@@ -130,5 +131,92 @@ describe("slice placement", () => {
     );
     assert.equal(open.left, 72_000_000 / 86_400_000);
     assert.equal(open.width, 3_600_000 / 86_400_000);
+  });
+
+  it("places a slice inside a window that starts at 10:00", () => {
+    const placed = slicePlacement(
+      "2026-10-29",
+      {
+        start: "2026-10-29T11:00:00.000+04:00",
+        end: "2026-10-29T12:00:00.000+04:00",
+        open: false,
+        continuedFromPreviousDay: false,
+        continuesBeyondDay: false,
+      },
+      "2026-10-29T12:00:00.000+04:00",
+      36_000_000,
+    );
+    assert.equal(placed.left, 3_600_000 / 50_400_000);
+    assert.equal(placed.width, 3_600_000 / 50_400_000);
+  });
+});
+
+describe("home timeline start", () => {
+  it("starts at 10:00 when the first arrival is later", () => {
+    assert.equal(
+      homeTimelineStartMs({
+        date: "2026-10-29",
+        firstArrival: "2026-10-29T11:46:26.016+04:00",
+        sessions: [
+          {
+            start: "2026-10-29T11:46:26.016+04:00",
+            end: null,
+            open: true,
+            continuedFromPreviousDay: false,
+            continuesBeyondDay: false,
+          },
+        ],
+      }),
+      36_000_000,
+    );
+  });
+
+  it("starts at the arrival hour when that hour is before 10:00", () => {
+    assert.equal(
+      homeTimelineStartMs({
+        date: "2026-10-29",
+        firstArrival: "2026-10-29T09:46:00.000+04:00",
+        sessions: [
+          {
+            start: "2026-10-29T09:46:00.000+04:00",
+            end: "2026-10-29T12:00:00.000+04:00",
+            open: false,
+            continuedFromPreviousDay: false,
+            continuesBeyondDay: false,
+          },
+        ],
+      }),
+      32_400_000,
+    );
+  });
+
+  it("starts at midnight when the visit began the previous day", () => {
+    assert.equal(
+      homeTimelineStartMs({
+        date: "2026-10-29",
+        firstArrival: null,
+        sessions: [
+          {
+            start: "2026-10-29T00:00:00.000+04:00",
+            end: "2026-10-29T11:00:00.000+04:00",
+            open: false,
+            continuedFromPreviousDay: true,
+            continuesBeyondDay: false,
+          },
+        ],
+      }),
+      0,
+    );
+  });
+
+  it("starts at 10:00 when the day has no office time", () => {
+    assert.equal(
+      homeTimelineStartMs({
+        date: "2026-10-29",
+        firstArrival: null,
+        sessions: [],
+      }),
+      36_000_000,
+    );
   });
 });
