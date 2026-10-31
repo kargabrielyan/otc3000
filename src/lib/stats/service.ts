@@ -32,6 +32,7 @@ export async function loadStatsReport(
   from: string,
   to: string,
   now: Date,
+  weekdaysOnly = false,
 ): Promise<StatsReport> {
   const rangeStart = startInstantOfBusinessDate(from);
   const rangeEnd = startInstantOfBusinessDate(addCalendarDays(to, 1));
@@ -61,7 +62,7 @@ export async function loadStatsReport(
     ...(prior ? [toStatsEvent(prior)] : []),
     ...rows.map(toStatsEvent),
   ];
-  return buildStatsReport({ events, from, to, now });
+  return buildStatsReport({ events, from, to, now, weekdaysOnly });
 }
 
 export async function statsJsonResponse(
@@ -70,6 +71,7 @@ export async function statsJsonResponse(
     now: Date,
     params: URLSearchParams,
   ) => BusinessDateRange | null,
+  weekdaysOnly = false,
 ): Promise<Response> {
   try {
     const now = new Date();
@@ -81,7 +83,7 @@ export async function statsJsonResponse(
       );
     }
 
-    const report = await loadStatsReport(range.from, range.to, now);
+    const report = await loadStatsReport(range.from, range.to, now, weekdaysOnly);
     return Response.json(report, { headers: NO_STORE });
   } catch (error: unknown) {
     logInternalError(error);

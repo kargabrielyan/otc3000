@@ -31,7 +31,7 @@ When two events have the same timestamp, the later row is the one with the great
 
 Statistics are calculated from the presence event log when a report is requested. Derived totals are not stored. These read routes are unauthenticated for now, same as the presence API.
 
-A business day runs from local midnight to the next local midnight in `Asia/Yerevan`. The interval is half-open, so an instant exactly at midnight belongs to the new day. Weeks start on Monday and always contain seven dates. A month is the calendar month in that timezone.
+A business day runs from local midnight to the next local midnight in `Asia/Yerevan`. The interval is half-open, so an instant exactly at midnight belongs to the new day. Weeks start on Monday. Week and month statistics count Monday through Friday. In those reports, `from` and `to` are the first and last weekday, and `days` lists those weekdays. History, the calendar, a single day, and a custom range still include every requested date.
 
 Office time is the overlap between each presence session and that business day. An open session ends at the current time. A session that crosses midnight is split there: the first day has no last exit, and the next day can have office time with no arrival and no visit.
 
@@ -40,11 +40,11 @@ Outside time counts only the gaps between that day's office slices. Time before 
 Durations in the JSON are milliseconds.
 
 - `GET /api/stats/today` — the Yerevan business date of the request
-- `GET /api/stats/week` — Monday through Sunday. Optional `date=YYYY-MM-DD` selects another week.
-- `GET /api/stats/month` — the calendar month. Optional `date=YYYY-MM-DD` selects another month.
-- `GET /api/stats/range?from=YYYY-MM-DD&to=YYYY-MM-DD` — both dates are required and inclusive
+- `GET /api/stats/week` — Monday through Friday. Optional `date=YYYY-MM-DD` selects another week.
+- `GET /api/stats/month` — Monday through Friday of the calendar month. Optional `date=YYYY-MM-DD` selects another month.
+- `GET /api/stats/range?from=YYYY-MM-DD&to=YYYY-MM-DD` — both dates are required and inclusive, including Saturday and Sunday
 
-The inclusive range can be at most 366 days. A date that is not a real `YYYY-MM-DD` day, a reversed range, or a longer range returns 400 with `invalid_range`. A range with no events returns one zeroed day per date.
+The inclusive range can be at most 366 days. A date that is not a real `YYYY-MM-DD` day, a reversed range, or a longer range returns 400 with `invalid_range`. A range with no events returns one zeroed day per date. A week or month with no events returns one zeroed day per weekday.
 
 ```bash
 curl.exe -s http://127.0.0.1:3000/api/stats/today

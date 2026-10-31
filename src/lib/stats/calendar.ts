@@ -182,6 +182,10 @@ export function enumerateBusinessDates(from: string, to: string): string[] {
   return dates;
 }
 
+export function isWeekday(date: string): boolean {
+  return mondayOffset(date) <= 4;
+}
+
 function mondayOffset(date: string): number {
   const [year, month, day] = requireBusinessDate(date);
   const noon = instantFromCivilTime(year, month, day, 12, 0, 0, 0);

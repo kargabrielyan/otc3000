@@ -114,9 +114,9 @@ export default async function StatisticsPage({
   const month = calendarMonthContaining(today);
   const previous = calendarMonthContaining(addCalendarDays(month.from, -1));
   const [weekReport, monthReport, previousReport] = await Promise.all([
-    loadOfficeReport(week.from, week.to, now),
-    loadOfficeReport(month.from, month.to, now),
-    loadOfficeReport(previous.from, previous.to, now),
+    loadOfficeReport(week.from, week.to, now, true),
+    loadOfficeReport(month.from, month.to, now, true),
+    loadOfficeReport(previous.from, previous.to, now, true),
   ]);
   const selected = period === "week" ? weekReport : monthReport;
   const density = period === "week" ? "weekday" : "day";
@@ -126,7 +126,10 @@ export default async function StatisticsPage({
 
   return (
     <div className="space-y-6">
-      <h1 className="text-xl font-medium">Statistics</h1>
+      <div className="space-y-1">
+        <h1 className="text-xl font-medium">Statistics</h1>
+        <p className="text-sm text-muted-foreground">Monday through Friday.</p>
+      </div>
       <div className="grid gap-4 lg:grid-cols-2">
         <SummaryCard title="This week" report={weekReport} />
         <SummaryCard title="This month" report={monthReport}>

@@ -8,6 +8,7 @@ import {
   addCalendarDays,
   businessDateFromInstant,
   enumerateBusinessDates,
+  isWeekday,
   startInstantOfBusinessDate,
 } from "./calendar.ts";
 import type { DayStats, StatsEvent, StatsReport } from "./types.ts";
@@ -201,6 +202,7 @@ export function buildStatsReport(input: {
   from: string;
   to: string;
   now: Date;
+  weekdaysOnly?: boolean;
 }): StatsReport {
   const nowMs = input.now.getTime();
   const rangeStartMs = startInstantOfBusinessDate(input.from).getTime();
@@ -219,10 +221,13 @@ export function buildStatsReport(input: {
   }
 
   const played = replay(prior, subsequent);
-  const drafts = enumerateBusinessDates(input.from, input.to).map((date) =>
-    buildDay(date, played, input.now),
+  const dates = enumerateBusinessDates(input.from, input.to).filter((date) =>
+    input.weekdaysOnly ? isWeekday(date) : true,
   );
+  const drafts = dates.map((date) => buildDay(date, played, input.now));
   const days = drafts.map((draft) => draft.stats);
+  const firstCounted = days[0];
+  const lastCounted = days[days.length - 1];
   const officeMs = days.reduce((sum, day) => sum + day.officeMs, 0);
   const outsideMs = days.reduce((sum, day) => sum + day.outsideMs, 0);
   const visits = days.reduce((sum, day) => sum + day.visits, 0);
@@ -231,8 +236,9 @@ export function buildStatsReport(input: {
 
   return {
     timezone: BUSINESS_TIMEZONE,
-    from: input.from,
-    to: input.to,
+    from:
+      input.weekdaysOnly && firstCounted ? firstCounted.date : input.from,
+    to: input.weekdaysOnly && lastCounted ? lastCounted.date : input.to,
     generatedAt: formatBusinessTimestamp(input.now),
     status: played.status,
     since: played.since ? formatBusinessTimestamp(played.since) : null,

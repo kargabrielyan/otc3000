@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import {
   addCalendarDays,
   businessDateFromInstant,
+  isWeekday,
   mondayWeekContaining,
 } from "@/lib/stats/calendar";
 import {
@@ -36,8 +37,12 @@ export default async function DashboardPage() {
     throw new Error("The report could not be loaded.");
   }
 
+  const weekThroughFriday = addCalendarDays(week.from, 4);
   const weekDays = report.days.filter(
-    (day) => day.date >= week.from && day.date <= week.to,
+    (day) =>
+      day.date >= week.from &&
+      day.date <= weekThroughFriday &&
+      isWeekday(day.date),
   );
   const recentDays = report.days
     .filter((day) => day.date <= today)
@@ -87,7 +92,7 @@ export default async function DashboardPage() {
       <section className="space-y-3">
         <h2 className="text-base font-medium">This week</h2>
         <p className="text-sm text-muted-foreground">
-          {formatBusinessDate(week.from)} – {formatBusinessDate(week.to)}
+          {formatBusinessDate(week.from)} – {formatBusinessDate(weekThroughFriday)}
         </p>
         <OfficeTimeChart points={points} />
         <OfficeTimeList points={points} />

@@ -11,14 +11,18 @@ export const dynamic = "force-dynamic";
 
 export async function GET(request: Request): Promise<Response> {
   await connection();
-  return statsJsonResponse(request, (now, params) => {
-    const anchor = resolveOptionalBusinessDate(
-      params.get("date"),
-      businessDateFromInstant(now),
-    );
-    if (!anchor) {
-      return null;
-    }
-    return mondayWeekContaining(anchor);
-  });
+  return statsJsonResponse(
+    request,
+    (now, params) => {
+      const anchor = resolveOptionalBusinessDate(
+        params.get("date"),
+        businessDateFromInstant(now),
+      );
+      if (!anchor) {
+        return null;
+      }
+      return mondayWeekContaining(anchor);
+    },
+    true,
+  );
 }

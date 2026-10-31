@@ -502,6 +502,100 @@ describe("statistics engine", () => {
     assert.equal(sorted.status, "OUT_OF_OFFICE");
   });
 
+  it("keeps Saturday when the report includes every date", () => {
+    const report = buildStatsReport({
+      events: [
+        event("1", "ENTER", at(2026, 10, 31, 10, 0)),
+        event("2", "EXIT", at(2026, 10, 31, 12, 0)),
+      ],
+      from: "2026-10-31",
+      to: "2026-10-31",
+      now: at(2026, 10, 31, 13, 0),
+    });
+
+    assertConsistent(report);
+    assert.equal(report.days.length, 1);
+    assert.equal(report.days[0]?.date, "2026-10-31");
+    assert.equal(report.officeMs, 7_200_000);
+    assert.equal(report.officeDays, 1);
+  });
+
+  it("counts office time, visits, and averages on weekdays only", () => {
+    const events = [
+      event("1", "ENTER", at(2026, 10, 30, 10, 0)),
+      event("2", "EXIT", at(2026, 10, 30, 18, 0)),
+      event("3", "ENTER", at(2026, 10, 30, 22, 0)),
+      event("4", "EXIT", at(2026, 10, 31, 2, 0)),
+      event("5", "ENTER", at(2026, 10, 31, 11, 0)),
+      event("6", "EXIT", at(2026, 10, 31, 16, 0)),
+      event("7", "ENTER", at(2026, 11, 1, 9, 0)),
+      event("8", "EXIT", at(2026, 11, 1, 12, 0)),
+      event("9", "ENTER", at(2026, 11, 2, 9, 30)),
+      event("10", "EXIT", at(2026, 11, 2, 11, 30)),
+    ];
+    const now = at(2026, 11, 2, 12, 0);
+    const weekdays = buildStatsReport({
+      events,
+      from: "2026-10-26",
+      to: "2026-11-02",
+      now,
+      weekdaysOnly: true,
+    });
+    const allDays = buildStatsReport({
+      events,
+      from: "2026-10-26",
+      to: "2026-11-02",
+      now,
+    });
+
+    assertConsistent(weekdays);
+    assertConsistent(allDays);
+    assert.deepEqual(
+      weekdays.days.map((day) => day.date),
+      [
+        "2026-10-26",
+        "2026-10-27",
+        "2026-10-28",
+        "2026-10-29",
+        "2026-10-30",
+        "2026-11-02",
+      ],
+    );
+    assert.equal(weekdays.from, "2026-10-26");
+    assert.equal(weekdays.to, "2026-11-02");
+    assert.equal(weekdays.officeMs, 43_200_000);
+    assert.equal(weekdays.visits, 3);
+    assert.equal(weekdays.officeDays, 2);
+    assert.equal(weekdays.averageOfficeMs, 21_600_000);
+    assert.equal(weekdays.averageArrivalMs, 35_100_000);
+    assert.equal(weekdays.averageDepartureMs, 53_100_000);
+    assert.equal(weekdays.days[4]?.date, "2026-10-30");
+    assert.equal(weekdays.days[4]?.officeMs, 36_000_000);
+    assert.equal(weekdays.days[4]?.lastExit, "2026-10-30T18:00:00.000+04:00");
+    assert.equal(weekdays.days[4]?.sessions[1]?.continuesBeyondDay, true);
+    assert.equal(weekdays.days[5]?.officeMs, 7_200_000);
+    assert.equal(allDays.days.length, 8);
+    assert.equal(allDays.officeMs, 79_200_000);
+    assert.equal(allDays.officeDays, 4);
+
+    const weekendOnly = buildStatsReport({
+      events,
+      from: "2026-10-31",
+      to: "2026-11-01",
+      now,
+      weekdaysOnly: true,
+    });
+    assertConsistent(weekendOnly);
+    assert.equal(weekendOnly.days.length, 0);
+    assert.equal(weekendOnly.officeMs, 0);
+    assert.equal(weekendOnly.officeDays, 0);
+    assert.equal(weekendOnly.averageOfficeMs, null);
+    assert.equal(weekendOnly.averageArrivalMs, null);
+    assert.equal(weekendOnly.from, "2026-10-31");
+    assert.equal(weekendOnly.to, "2026-11-01");
+    assert.equal(weekendOnly.status, "OUT_OF_OFFICE");
+  });
+
   it("reproduces the four accepted presence rows", () => {
     const report = buildStatsReport({
       events: [

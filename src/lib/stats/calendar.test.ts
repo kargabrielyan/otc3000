@@ -6,6 +6,7 @@ import {
   calendarMonthContaining,
   countInclusiveBusinessDays,
   instantFromCivilTime,
+  isWeekday,
   mondayWeekContaining,
   resolveInclusiveRange,
   resolveOptionalBusinessDate,
@@ -67,6 +68,14 @@ describe("business dates", () => {
       startInstantOfBusinessDate("2026-10-27").toISOString(),
       "2026-10-26T20:00:00.000Z",
     );
+  });
+
+  it("treats Monday through Friday as weekdays", () => {
+    assert.equal(isWeekday("2026-10-26"), true);
+    assert.equal(isWeekday("2026-10-30"), true);
+    assert.equal(isWeekday("2026-10-31"), false);
+    assert.equal(isWeekday("2026-11-01"), false);
+    assert.equal(isWeekday("2026-11-02"), true);
   });
 
   it("uses the calendar length of October", () => {

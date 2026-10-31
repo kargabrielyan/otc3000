@@ -14,9 +14,10 @@ export async function loadOfficeReport(
   from: string,
   to: string,
   now: Date,
+  weekdaysOnly = false,
 ): Promise<StatsReport> {
   try {
-    return await loadStatsReport(from, to, now);
+    return await loadStatsReport(from, to, now, weekdaysOnly);
   } catch (error: unknown) {
     logInternalError(error);
     throw new Error("The report could not be loaded.");
